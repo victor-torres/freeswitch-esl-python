@@ -1,7 +1,7 @@
 from distutils.core import setup, Extension
 
-setup (name = 'FreeSWITCH-esl-python',
-       version = '0.1vdev',
+setup (name = 'FreeSWITCH-ESL-Python',
+       version = '1.0',
        ext_modules=[Extension('_ESL',sources=['swig/esl_wrap.cpp',
                                               'src/esl.c',
                                               'src/esl_json.c',
@@ -13,5 +13,5 @@ setup (name = 'FreeSWITCH-esl-python',
        include_dirs=['include/'])],
        packages = ['freeswitchESL'],
        pymodules = ['ESL'],
-       description = 'Auto-generated swig python module for FreeSWITCH mod_esl with a binary component.',)
-	   
+       description = 'Standalone FreeSWITCH ESL Python module.',)
+

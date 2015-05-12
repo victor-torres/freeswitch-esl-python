@@ -46,8 +46,3 @@ $ mv ESL.py ../freeswitchESL/ESL.py
 - Original repository by [gurteshwar](https://github.com/gurteshwar/freeswitch-esl-python)
 - FreeSWITCH docs: [ESL](http://wiki.freeswitch.org/wiki/Esl)
 - FreeSWICTH docs [Python ESL](http://wiki.freeswitch.org/wiki/Python_ESL)
-
-## Notes
-
-- Needs to be updated with fresh releases of FreeSWITCH
-- But should run fine in production environments

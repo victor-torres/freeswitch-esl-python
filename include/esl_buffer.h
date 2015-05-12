@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2010, Anthony Minessale II
+ * Copyright (c) 2010-2012, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,7 +43,7 @@
 struct esl_buffer;
 typedef struct esl_buffer esl_buffer_t;
 
-/*! \brief Allocate a new dynamic esl_buffer 
+/*! \brief Allocate a new dynamic esl_buffer
  * \param buffer returned pointer to the new buffer
  * \param blocksize length to realloc by as data is added
  * \param start_len ammount of memory to reserve initially
@@ -52,25 +52,25 @@ typedef struct esl_buffer esl_buffer_t;
  */
 ESL_DECLARE(esl_status_t) esl_buffer_create(esl_buffer_t **buffer, esl_size_t blocksize, esl_size_t start_len, esl_size_t max_len);
 
-/*! \brief Get the length of a esl_buffer_t 
+/*! \brief Get the length of a esl_buffer_t
  * \param buffer any buffer of type esl_buffer_t
  * \return int size of the buffer.
  */
 ESL_DECLARE(esl_size_t) esl_buffer_len(esl_buffer_t *buffer);
 
-/*! \brief Get the freespace of a esl_buffer_t 
+/*! \brief Get the freespace of a esl_buffer_t
  * \param buffer any buffer of type esl_buffer_t
  * \return int freespace in the buffer.
  */
 ESL_DECLARE(esl_size_t) esl_buffer_freespace(esl_buffer_t *buffer);
 
-/*! \brief Get the in use amount of a esl_buffer_t 
+/*! \brief Get the in use amount of a esl_buffer_t
  * \param buffer any buffer of type esl_buffer_t
  * \return int ammount of buffer curently in use
  */
 ESL_DECLARE(esl_size_t) esl_buffer_inuse(esl_buffer_t *buffer);
 
-/*! \brief Read data from a esl_buffer_t up to the ammount of datalen if it is available.  Remove read data from buffer. 
+/*! \brief Read data from a esl_buffer_t up to the ammount of datalen if it is available.  Remove read data from buffer.
  * \param buffer any buffer of type esl_buffer_t
  * \param data pointer to the read data to be returned
  * \param datalen amount of data to be returned
@@ -81,7 +81,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_read(esl_buffer_t *buffer, void *data, esl_si
 ESL_DECLARE(esl_size_t) esl_buffer_read_packet(esl_buffer_t *buffer, void *data, esl_size_t maxlen);
 ESL_DECLARE(esl_size_t) esl_buffer_packet_count(esl_buffer_t *buffer);
 
-/*! \brief Read data endlessly from a esl_buffer_t 
+/*! \brief Read data endlessly from a esl_buffer_t
  * \param buffer any buffer of type esl_buffer_t
  * \param data pointer to the read data to be returned
  * \param datalen amount of data to be returned
@@ -142,5 +142,5 @@ ESL_DECLARE(esl_size_t) esl_buffer_zwrite(esl_buffer_t *buffer, const void *data
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

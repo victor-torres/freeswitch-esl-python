@@ -1,4 +1,4 @@
-/* 
+/*
  * Cross Platform Thread/Mutex abstraction
  * Copyright(C) 2007 Michael Jerris
  *
@@ -13,7 +13,7 @@
  * code prove defective in any respect, you (not the initial developer or any other contributor)
  * assume the cost of any necessary servicing, repair or correction. This disclaimer of warranty
  * constitutes an essential part of this license. No use of any covered code is authorized hereunder
- * except under this disclaimer. 
+ * except under this disclaimer.
  *
  */
 
@@ -54,5 +54,5 @@ ESL_DECLARE(esl_status_t) esl_mutex_unlock(esl_mutex_t *mutex);
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

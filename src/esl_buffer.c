@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2010, Anthony Minessale II
+ * Copyright (c) 2010-2012, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -54,6 +54,7 @@ ESL_DECLARE(esl_status_t) esl_buffer_create(esl_buffer_t **buffer, esl_size_t bl
 	esl_buffer_t *new_buffer;
 
 	new_buffer = malloc(sizeof(*new_buffer));
+
 	if (new_buffer) {
 		memset(new_buffer, 0, sizeof(*new_buffer));
 
@@ -199,7 +200,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_packet_count(esl_buffer_t *buffer)
 {
 	char *pe, *p, *e, *head = (char *) buffer->head;
 	esl_size_t x = 0;
-	
+
 	esl_assert(buffer != NULL);
 
 	e = (head + buffer->used);
@@ -214,7 +215,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_packet_count(esl_buffer_t *buffer)
 			}
 		}
 	}
-	
+
 	return x;
 }
 
@@ -242,7 +243,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_read_packet(esl_buffer_t *buffer, void *data,
 			}
 		}
 	}
-	
+
 	return esl_buffer_read(buffer, data, datalen);
 }
 
@@ -273,11 +274,11 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 	  buffer->head = buffer->data;
 	  }
 	*/
-	
+
 	if (freespace < datalen) {
 		esl_size_t new_size, new_block_size;
 		void *data1;
-		
+
 		new_size = buffer->datalen + datalen;
 		new_block_size = buffer->datalen + buffer->blocksize;
 
@@ -293,7 +294,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 		buffer->head = buffer->data;
 		buffer->datalen = new_size;
 	}
-	
+
 
 	freespace = buffer->datalen - buffer->used;
 
@@ -322,7 +323,7 @@ ESL_DECLARE(void) esl_buffer_zero(esl_buffer_t *buffer)
 ESL_DECLARE(esl_size_t) esl_buffer_zwrite(esl_buffer_t *buffer, const void *data, esl_size_t datalen)
 {
 	esl_size_t w;
-	
+
 	if (!(w = esl_buffer_write(buffer, data, datalen))) {
 		esl_buffer_zero(buffer);
 		return esl_buffer_write(buffer, data, datalen);
@@ -335,6 +336,7 @@ ESL_DECLARE(void) esl_buffer_destroy(esl_buffer_t **buffer)
 {
 	if (*buffer) {
 		free((*buffer)->data);
+		(*buffer)->data = NULL;
 		free(*buffer);
 	}
 
@@ -349,5 +351,5 @@ ESL_DECLARE(void) esl_buffer_destroy(esl_buffer_t **buffer)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

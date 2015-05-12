@@ -1,4 +1,4 @@
-/* 
+/*
  * Cross Platform Thread/Mutex abstraction
  * Copyright(C) 2007 Michael Jerris
  *
@@ -13,7 +13,7 @@
  * code prove defective in any respect, you (not the initial developer or any other contributor)
  * assume the cost of any necessary servicing, repair or correction. This disclaimer of warranty
  * constitutes an essential part of this license. No use of any covered code is authorized hereunder
- * except under this disclaimer. 
+ * except under this disclaimer.
  *
  */
 
@@ -108,7 +108,7 @@ esl_status_t esl_thread_create_detached_ex(esl_thread_function_t func, void *dat
 	status = ESL_SUCCESS;
 	goto done;
 #else
-	
+
 	if (pthread_attr_init(&thread->attribute) != 0)	goto fail;
 
 	if (pthread_attr_setdetachstate(&thread->attribute, PTHREAD_CREATE_DETACHED) != 0) goto failpthread;
@@ -148,8 +148,10 @@ ESL_DECLARE(esl_status_t) esl_mutex_create(esl_mutex_t **mutex)
 #ifdef WIN32
 	InitializeCriticalSection(&check->mutex);
 #else
-	if (pthread_mutexattr_init(&attr))
+	if (pthread_mutexattr_init(&attr)) {
+		free(check);
 		goto done;
+	}
 
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
 		goto fail;
@@ -161,6 +163,7 @@ ESL_DECLARE(esl_status_t) esl_mutex_create(esl_mutex_t **mutex)
 
  fail:
 	pthread_mutexattr_destroy(&attr);
+	free(check);
 	goto done;
 
  success:
@@ -235,5 +238,5 @@ ESL_DECLARE(esl_status_t) esl_mutex_unlock(esl_mutex_t *mutex)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

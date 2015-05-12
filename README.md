@@ -25,6 +25,13 @@ except ImportError:
 
 Redundancy could be helpful when you have FreeSWITCH running with your system in production environments, so you can just import ESL, but you also have a test environment (E.g. Codeship) without a FreeSWITCH installation.
 
+## Building
+
+```shell
+$ cd swig
+$ swig -module ESL -classic -python -c++ -DMULTIPLICITY -threads -I../include -o esl_wrap.cpp ESL.i
+```
+
 ## Resources
 
 - Original repository by [gurteshwar](https://github.com/gurteshwar/freeswitch-esl-python)

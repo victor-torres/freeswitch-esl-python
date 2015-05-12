@@ -9,9 +9,24 @@ void eslSetLogLevel(int level)
 	esl_global_set_default_logger(level);
 }
 
+ESLconnection::ESLconnection(const char *host, const int port, const char *password)
+{
+	connection_construct_common();
+
+	esl_connect(&handle, host, port, NULL, password);
+}
+
+ESLconnection::ESLconnection(const char *host, const int port, const char *user, const char *password)
+{
+	connection_construct_common();
+
+	esl_connect(&handle, host, port, user, password);
+}
+
 ESLconnection::ESLconnection(const char *host, const char *port, const char *password)
 {
 	connection_construct_common();
+	if (port == NULL) return;
 	int x_port = atoi(port);
 
 	esl_connect(&handle, host, x_port, NULL, password);
@@ -20,6 +35,7 @@ ESLconnection::ESLconnection(const char *host, const char *port, const char *pas
 ESLconnection::ESLconnection(const char *host, const char *port, const char *user, const char *password)
 {
 	connection_construct_common();
+	if (port == NULL) return;
 	int x_port = atoi(port);
 
 	esl_connect(&handle, host, x_port, user, password);
@@ -34,10 +50,9 @@ ESLconnection::ESLconnection(int socket)
 
 ESLconnection::~ESLconnection()
 {
-	if (handle.connected) {
+	if (!handle.destroyed) {
 		esl_disconnect(&handle);
 	}
-
 }
 
 int ESLconnection::socketDescriptor()
@@ -52,7 +67,7 @@ int ESLconnection::socketDescriptor()
 
 int ESLconnection::disconnect()
 {
-	if (handle.connected) {
+	if (!handle.destroyed) {
         return esl_disconnect(&handle);
     }
 
@@ -76,7 +91,7 @@ ESLevent *ESLconnection::sendRecv(const char *cmd)
 		esl_event_dup(&event, handle.last_sr_event);
 		return new ESLevent(event, 1);
 	}
-	
+
 	return NULL;
 }
 
@@ -85,7 +100,7 @@ ESLevent *ESLconnection::api(const char *cmd, const char *arg)
 	size_t len;
 	char *cmd_buf;
 	ESLevent *event;
-	
+
 	if (!cmd) {
 		return NULL;
 	}
@@ -110,7 +125,7 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg, const char *job
 	size_t len;
 	char *cmd_buf;
 	ESLevent *event;
-	
+
 	if (!cmd) {
 		return NULL;
 	}
@@ -119,7 +134,7 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg, const char *job
 
 	cmd_buf = (char *) malloc(len + 1);
 	assert(cmd_buf);
-	
+
 	if (job_uuid) {
 		snprintf(cmd_buf, len, "bgapi %s%s%s\nJob-UUID: %s", cmd, arg ? " " : "", arg ? arg : "", job_uuid);
 	} else {
@@ -130,7 +145,7 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg, const char *job
 
 	event = sendRecv(cmd_buf);
 	free(cmd_buf);
-	
+
 	return event;
 }
 
@@ -141,7 +156,7 @@ ESLevent *ESLconnection::getInfo()
 		esl_event_dup(&event, handle.info_event);
 		return new ESLevent(event, 1);
 	}
-	
+
 	return NULL;
 }
 
@@ -239,7 +254,7 @@ ESLevent *ESLconnection::recvEventTimed(int ms)
 			return new ESLevent(event, 1);
 		}
     }
-	
+
 	return NULL;
 }
 
@@ -276,13 +291,13 @@ int ESLconnection::events(const char *etype, const char *value)
 ESLevent::ESLevent(const char *type, const char *subclass_name)
 {
 	esl_event_types_t event_id;
-	
+
 	event_construct_common();
 
 	if (!strcasecmp(type, "json") && !esl_strlen_zero(subclass_name)) {
 		if (esl_event_create_json(&event, subclass_name) != ESL_SUCCESS) {
 			return;
-			
+
 		}
 		event_id = event->event_id;
 	} else {
@@ -301,10 +316,10 @@ ESLevent::ESLevent(const char *type, const char *subclass_name)
 			event = NULL;
 		}
 	}
-	
+
 	serialized_string = NULL;
 	mine = 1;
-	
+
 }
 
 ESLevent::ESLevent(esl_event_t *wrap_me, int free_me)
@@ -328,7 +343,7 @@ ESLevent::ESLevent(ESLevent *me)
 
 ESLevent::~ESLevent()
 {
-	
+
 	if (serialized_string) {
 		free(serialized_string);
 	}
@@ -364,11 +379,11 @@ const char *ESLevent::serialize(const char *format)
 	this_check("");
 
 	esl_safe_free(serialized_string);
-	
+
 	if (format == NULL) {
 		format = "text";
 	}
-	
+
 	if (!event) {
 		return "";
 	}
@@ -473,13 +488,13 @@ bool ESLevent::addBody(const char *value)
 	} else {
 		esl_log(ESL_LOG_ERROR, "Trying to addBody an event that does not exist!\n");
 	}
-	
+
 	return false;
 }
 
 char *ESLevent::getBody(void)
 {
-	
+
 	this_check((char *)"");
 
 	if (event) {
@@ -487,7 +502,7 @@ char *ESLevent::getBody(void)
 	} else {
 		esl_log(ESL_LOG_ERROR, "Trying to getBody an event that does not exist!\n");
 	}
-	
+
 	return NULL;
 }
 
@@ -500,6 +515,17 @@ const char *ESLevent::getType(void)
 	} else {
 		esl_log(ESL_LOG_ERROR, "Trying to getType an event that does not exist!\n");
 	}
-	
+
 	return (char *) "invalid";
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c++
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

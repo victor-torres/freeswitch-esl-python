@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
- * 
+ *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -116,6 +116,8 @@ static const char *EVENT_NAMES[] = {
 	"RE_SCHEDULE",
 	"RELOADXML",
 	"NOTIFY",
+	"PHONE_FEATURE",
+	"PHONE_FEATURE_SUBSCRIBE",
 	"SEND_MESSAGE",
 	"RECV_MESSAGE",
 	"REQUEST_PARAMS",
@@ -127,6 +129,7 @@ static const char *EVENT_NAMES[] = {
 	"SERVER_DISCONNECTED",
 	"SEND_INFO",
 	"RECV_INFO",
+	"RECV_RTCP_MESSAGE",
 	"CALL_SECURE",
 	"NAT",
 	"RECORD_START",
@@ -137,7 +140,13 @@ static const char *EVENT_NAMES[] = {
 	"FAILURE",
 	"SOCKET_DATA",
 	"MEDIA_BUG_START",
-	"MEDIA_BUG_START",
+	"MEDIA_BUG_STOP",
+	"CONFERENCE_DATA_QUERY",
+	"CONFERENCE_DATA",
+	"CALL_SETUP_REQ",
+	"CALL_SETUP_RESULT",
+	"CALL_DETAIL",
+	"DEVICE_STATE",
 	"ALL"
 };
 
@@ -183,8 +192,8 @@ ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_eve
 	if (subclass_name) {
 		(*event)->subclass_name = DUP(subclass_name);
 		esl_event_add_header_string(*event, ESL_STACK_BOTTOM, "Event-Subclass", subclass_name);
-	}	
-	
+	}
+
 	return ESL_SUCCESS;
 }
 
@@ -270,9 +279,9 @@ ESL_DECLARE(char *) esl_event_get_header_idx(esl_event_t *event, const char *hea
 		}
 
 		return hp->value;
-	} else if (!strcmp(header_name, "_body")) {
+	} else if (header_name && !strcmp(header_name, "_body")) {
 		return event->body;
-	}		
+	}
 
 	return NULL;
 }
@@ -299,7 +308,7 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 		esl_assert(x < 1000000);
 		hash = esl_ci_hashfunc_default(header_name, &hlen);
 
-		if ((!hp->hash || hash == hp->hash) && (hp->name && !strcasecmp(header_name, hp->name)) && (esl_strlen_zero(val) || !strcmp(hp->value, val))) {
+		if ((!hp->hash || hash == hp->hash) && (hp->name && !strcasecmp(header_name, hp->name)) && (esl_strlen_zero(val) || (hp->value && !strcmp(hp->value, val)))) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {
@@ -320,7 +329,7 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 			}
 
 			FREE(hp->value);
-			
+
 			memset(hp, 0, sizeof(*hp));
 #ifdef ESL_EVENT_RECYCLE
 			if (esl_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != ESL_SUCCESS) {
@@ -352,7 +361,7 @@ static esl_event_header_t *new_header(const char *header_name)
 			esl_assert(header);
 #ifdef ESL_EVENT_RECYCLE
 		}
-#endif	
+#endif
 
 		memset(header, 0, sizeof(*header));
 		header->name = DUP(header_name);
@@ -383,19 +392,15 @@ ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const 
 		p += 2;
 	}
 
-	if (!max) {
-		return -2;
-	}
-
 	data = strdup(val + 7);
-	
+
 	len = (sizeof(char *) * max) + 1;
 	array = malloc(len);
 	esl_assert(array);
 	memset(array, 0, len);
-	
+
 	esl_separate_string_string(data, "|:", array, max);
-	
+
 	for(i = 0; i < max; i++) {
 		esl_event_add_header_string(event, ESL_STACK_PUSH, var, array[i]);
 	}
@@ -428,9 +433,9 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 		}
 		header_name = real_header_name;
 	}
-	
+
 	if (index_ptr || (stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {
-		
+
 		if (!(header = esl_event_get_header_ptr(event, header_name)) && index_ptr) {
 
 			header = new_header(header_name);
@@ -441,9 +446,9 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 
 			fly++;
 		}
-		
-		if ((header = esl_event_get_header_ptr(event, header_name))) {
-			
+
+		if (header || (header = esl_event_get_header_ptr(event, header_name))) {
+
 			if (index_ptr) {
 				if (index > -1 && index <= 4000) {
 					if (index < header->idx) {
@@ -452,7 +457,7 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 					} else {
 						int i;
 						char **m;
-					
+
 						m = realloc(header->array, sizeof(char *) * (index + 1));
 						esl_assert(m);
 						header->array = m;
@@ -502,7 +507,7 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 
 		header = new_header(header_name);
 	}
-	
+
 	if ((stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {
 		char **m = NULL;
 		esl_size_t len = 0;
@@ -520,7 +525,7 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 		}
 
 		i = header->idx + 1;
-		m = realloc(header->array, sizeof(char *) * i); 
+		m = realloc(header->array, sizeof(char *) * i);
 		esl_assert(m);
 
 		if ((stack & ESL_STACK_PUSH)) {
@@ -532,7 +537,7 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 			m[0] = data;
 		}
 
-		header->idx++;		
+		header->idx++;
 		header->array = m;
 
 	redraw:
@@ -547,7 +552,12 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 			esl_assert(hv);
 			header->value = hv;
 
-			esl_snprintf(header->value, len, "ARRAY::");
+			if (header->idx > 1) {
+				esl_snprintf(header->value, len, "ARRAY::");
+			} else {
+				*header->value = '\0';
+			}
+
 			for(j = 0; j < header->idx; j++) {
 				esl_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "|:", header->array[j]);
 			}
@@ -616,7 +626,7 @@ ESL_DECLARE(esl_status_t) esl_event_set_body(esl_event_t *event, const char *bod
 	if (body) {
 		event->body = DUP(body);
 	}
-	
+
 	return ESL_SUCCESS;
 }
 
@@ -665,7 +675,7 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 			}
 
 			FREE(this->value);
-			
+
 
 #ifdef ESL_EVENT_RECYCLE
 			if (esl_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != ESL_SUCCESS) {
@@ -694,13 +704,13 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 ESL_DECLARE(void) esl_event_merge(esl_event_t *event, esl_event_t *tomerge)
 {
 	esl_event_header_t *hp;
-	
+
 	esl_assert(tomerge && event);
 
 	for (hp = tomerge->headers; hp; hp = hp->next) {
 		if (hp->idx) {
 			int i;
-			
+
 			for(i = 0; i < hp->idx; i++) {
 				esl_event_add_header_string(event, ESL_STACK_PUSH, hp->name, hp->array[i]);
 			}
@@ -726,7 +736,7 @@ ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
 			continue;
 		}
-		
+
 		if (hp->idx) {
 			int i;
 			for (i = 0; i < hp->idx; i++) {
@@ -773,7 +783,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 		/*
 		 * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
 		 * so we could end up with a string that is 3 times the originals length, unlikely but rather
-		 * be safe than destroy the string, also add one for the null.  And try to be smart about using 
+		 * be safe than destroy the string, also add one for the null.  And try to be smart about using
 		 * the memory, allocate and only reallocate if we need more.  This avoids an alloc, free CPU
 		 * destroying loop.
 		 */
@@ -913,7 +923,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char 
 			}
 		}
 	}
-	
+
 	cJSON_Delete(cj);
 	*event = new_event;
 	return ESL_SUCCESS;
@@ -925,7 +935,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **st
 	cJSON *cj;
 
 	*str = NULL;
-	
+
 	cj = cJSON_CreateObject();
 
 	for (hp = event->headers; hp; hp = hp->next) {
@@ -936,9 +946,9 @@ ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **st
 			for(i = 0; i < hp->idx; i++) {
 				cJSON_AddItemToArray(a, cJSON_CreateString(hp->array[i]));
 			}
-			
+
 			cJSON_AddItemToObject(cj, hp->name, a);
-			
+
 		} else {
 			cJSON_AddItemToObject(cj, hp->name, cJSON_CreateString(hp->value));
 		}
@@ -956,7 +966,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **st
 
 	*str = cJSON_Print(cj);
 	cJSON_Delete(cj);
-	
+
 	return ESL_SUCCESS;
 }
 
@@ -968,5 +978,5 @@ ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **st
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

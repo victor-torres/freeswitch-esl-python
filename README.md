@@ -30,6 +30,7 @@ Redundancy could be helpful when you have FreeSWITCH running with your system in
 ```shell
 $ cd swig
 $ swig -module ESL -classic -python -c++ -DMULTIPLICITY -threads -I../include -o esl_wrap.cpp ESL.i
+$ mv ESL.py ../freeswitchESL/ESL.py
 ```
 
 ## Resources

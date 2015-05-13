@@ -45,3 +45,4 @@ $ mv ESL.py ../freeswitchESL/ESL.py
 
 - Original repository by [gurteshwar](https://github.com/gurteshwar/freeswitch-esl-python)
 - FreeSWITCH docs: [ESL](http://wiki.freeswitch.org/wiki/Esl) and [Python ESL](http://wiki.freeswitch.org/wiki/Python_ESL)
+- SWIG docs: [SWIG 3.0](http://www.swig.org/Doc3.0/SWIGDocumentation.html)

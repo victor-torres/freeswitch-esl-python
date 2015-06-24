@@ -14,7 +14,7 @@ $ pip install FreeSWITCH-ESL-Python
 $ pip freeze | grep ESL
 ```
 
-Should return something like `FreeSWITCH-ESL-Python==1.0`.
+Should return something like `FreeSWITCH-ESL-Python==1.2`.
 
 ## Using
 
